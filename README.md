@@ -1,5 +1,5 @@
 
-# 🏋️‍♀️ Sweat Together - 주간 운동 인증 다이어리
+# 🏋️‍♀️ Fit Diary - 주간 운동 인증 다이어리
 
 > 혼자 하기 어려운 운동, 이제 함께 기록하고 실천해요!
 
@@ -121,4 +121,5 @@ npm run dev
 
 ## Project URL
 
-**URL**: https://lovable.dev/projects/347aec26-7405-4c4a-8e0d-d81140f67c6a
+**URL**: https://workout-weekly-journal.lovable.app/teams
+
