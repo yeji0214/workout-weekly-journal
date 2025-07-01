@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Camera, Target, Calendar, Trophy, Plus, X, Eye } from 'lucide-react';
+import { Camera, Target, Calendar, Trophy, Plus, Eye, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Link } from 'react-router-dom';
 
 interface WorkoutEntry {
   id: string;
@@ -14,11 +16,23 @@ interface WorkoutEntry {
   exerciseName: string;
   comment: string;
   imageUrl?: string;
+  userId?: string;
+  userName?: string;
 }
 
 interface WeeklyGoal {
   count: number;
   startDate: string;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  description: string;
+  weeklyGoal: number;
+  members: string[];
+  createdBy: string;
+  createdAt: string;
 }
 
 const Index = () => {
@@ -27,6 +41,7 @@ const Index = () => {
   const [workoutEntries, setWorkoutEntries] = useState<WorkoutEntry[]>([]);
   const [newGoal, setNewGoal] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
   
   // 운동 인증 폼 상태
   const [exerciseName, setExerciseName] = useState('');
@@ -34,21 +49,29 @@ const Index = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
 
-  // 날짜별 상세 정보 모달 상태
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedDateEntries, setSelectedDateEntries] = useState<WorkoutEntry[]>([]);
-  const [showDateDetails, setShowDateDetails] = useState(false);
+  // 개별 게시글 모달 상태
+  const [selectedEntry, setSelectedEntry] = useState<WorkoutEntry | null>(null);
+  const [showEntryDetails, setShowEntryDetails] = useState(false);
 
   // 로컬스토리지에서 데이터 불러오기
   useEffect(() => {
     const savedGoal = localStorage.getItem('weeklyGoal');
     const savedEntries = localStorage.getItem('workoutEntries');
+    const savedTeam = localStorage.getItem('currentTeam');
     
     if (savedGoal) {
       setWeeklyGoal(JSON.parse(savedGoal));
     }
     if (savedEntries) {
       setWorkoutEntries(JSON.parse(savedEntries));
+    }
+    if (savedTeam) {
+      const team = JSON.parse(savedTeam);
+      setCurrentTeam(team);
+      // 팀에 속해있으면 팀 목표를 개인 목표로 설정
+      if (team && team.weeklyGoal) {
+        setWeeklyGoal(prev => ({ ...prev, count: team.weeklyGoal }));
+      }
     }
   }, []);
 
@@ -103,7 +126,9 @@ const Index = () => {
         date: new Date().toISOString().split('T')[0],
         exerciseName: exerciseName.trim(),
         comment: comment.trim(),
-        imageUrl: imagePreview
+        imageUrl: imagePreview,
+        userId: 'current-user',
+        userName: '나'
       };
       
       setWorkoutEntries(prev => [newEntry, ...prev]);
@@ -117,12 +142,10 @@ const Index = () => {
     }
   };
 
-  // 날짜별 운동 기록 보기
-  const handleDateClick = (date: string) => {
-    const dateEntries = workoutEntries.filter(entry => entry.date === date);
-    setSelectedDate(date);
-    setSelectedDateEntries(dateEntries);
-    setShowDateDetails(true);
+  // 개별 게시글 클릭 처리
+  const handleEntryClick = (entry: WorkoutEntry) => {
+    setSelectedEntry(entry);
+    setShowEntryDetails(true);
   };
 
   // 이번 주 인증 개수 계산
@@ -158,7 +181,38 @@ const Index = () => {
         <div className="text-center py-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">🏋️‍♀️ 운동 다이어리</h1>
           <p className="text-gray-600">주간 운동 챌린지</p>
+          
+          {/* 네비게이션 */}
+          <div className="flex justify-center gap-4 mt-4">
+            <Link to="/calendar">
+              <Button variant="outline" size="sm">
+                <Calendar className="h-4 w-4 mr-2" />
+                월간 히스토리
+              </Button>
+            </Link>
+            <Link to="/teams">
+              <Button variant="outline" size="sm">
+                <Users className="h-4 w-4 mr-2" />
+                팀 관리
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {/* 현재 팀 정보 */}
+        {currentTeam && (
+          <Card className="shadow-lg border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-blue-800">{currentTeam.name}</h3>
+                  <p className="text-sm text-blue-600">팀 목표: {currentTeam.weeklyGoal}회/주</p>
+                </div>
+                <Badge variant="secondary">팀 멤버</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 주간 목표 설정 카드 */}
         <Card className="shadow-lg">
@@ -194,12 +248,17 @@ const Index = () => {
                     value={newGoal}
                     onChange={(e) => setNewGoal(e.target.value)}
                     className="flex-1"
+                    disabled={!!currentTeam}
                   />
-                  <Button onClick={handleSetGoal} className="bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={handleSetGoal} className="bg-blue-600 hover:bg-blue-700" disabled={!!currentTeam}>
                     설정
                   </Button>
                 </div>
-                <p className="text-sm text-gray-500">이번 주 운동 목표를 설정해보세요!</p>
+                {currentTeam ? (
+                  <p className="text-sm text-blue-500">팀에 속해있어 팀 목표가 자동으로 설정됩니다.</p>
+                ) : (
+                  <p className="text-sm text-gray-500">이번 주 운동 목표를 설정해보세요!</p>
+                )}
               </div>
             )}
           </CardContent>
@@ -297,7 +356,7 @@ const Index = () => {
                   <div 
                     key={entry.id} 
                     className="border rounded-lg p-4 bg-white cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => handleDateClick(entry.date)}
+                    onClick={() => handleEntryClick(entry)}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-gray-800">{entry.exerciseName}</h3>
@@ -342,40 +401,43 @@ const Index = () => {
           </Card>
         )}
 
-        {/* 날짜별 상세 정보 모달 */}
-        <Dialog open={showDateDetails} onOpenChange={setShowDateDetails}>
+        {/* 개별 게시글 상세 모달 */}
+        <Dialog open={showEntryDetails} onOpenChange={setShowEntryDetails}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                {formatDate(selectedDate)} 운동 기록
+                운동 기록 상세
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              {selectedDateEntries.map((entry) => (
-                <div key={entry.id} className="border rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2">{entry.exerciseName}</h3>
-                  
-                  {entry.comment && (
-                    <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>
-                  )}
-                  
-                  {entry.imageUrl && (
-                    <img 
-                      src={entry.imageUrl} 
-                      alt="운동 인증" 
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                  )}
+            {selectedEntry && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">{selectedEntry.exerciseName}</h3>
+                  <p className="text-sm text-gray-500">{formatDate(selectedEntry.date)}</p>
                 </div>
-              ))}
-              
-              {selectedDateEntries.length === 0 && (
-                <p className="text-center text-gray-500 py-8">
-                  해당 날짜에 운동 기록이 없습니다.
-                </p>
-              )}
-            </div>
+                
+                {selectedEntry.comment && (
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-gray-700">{selectedEntry.comment}</p>
+                  </div>
+                )}
+                
+                {selectedEntry.imageUrl && (
+                  <div className="text-center">
+                    <img 
+                      src={selectedEntry.imageUrl} 
+                      alt="운동 인증" 
+                      className="w-full max-h-96 object-cover rounded-lg"
+                    />
+                  </div>
+                )}
+                
+                <div className="text-center text-sm text-gray-500">
+                  작성자: {selectedEntry.userName || '나'}
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

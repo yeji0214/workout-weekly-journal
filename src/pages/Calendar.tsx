@@ -1,0 +1,260 @@
+
+import React, { useState, useEffect } from 'react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Link } from 'react-router-dom';
+
+interface WorkoutEntry {
+  id: string;
+  date: string;
+  exerciseName: string;
+  comment: string;
+  imageUrl?: string;
+  userId?: string;
+  userName?: string;
+}
+
+const Calendar = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [workoutEntries, setWorkoutEntries] = useState<WorkoutEntry[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDateEntries, setSelectedDateEntries] = useState<WorkoutEntry[]>([]);
+  const [showDateDetails, setShowDateDetails] = useState(false);
+
+  useEffect(() => {
+    const savedEntries = localStorage.getItem('workoutEntries');
+    if (savedEntries) {
+      setWorkoutEntries(JSON.parse(savedEntries));
+    }
+  }, []);
+
+  // 현재 월의 첫째 날과 마지막 날 계산
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const firstDayOfWeek = firstDayOfMonth.getDay();
+  const daysInMonth = lastDayOfMonth.getDate();
+
+  // 이전/다음 달로 이동
+  const goToPreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  // 특정 날짜에 운동 기록이 있는지 확인
+  const getWorkoutEntriesForDate = (date: string) => {
+    return workoutEntries.filter(entry => entry.date === date);
+  };
+
+  // 날짜 클릭 처리
+  const handleDateClick = (day: number) => {
+    const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateEntries = getWorkoutEntriesForDate(dateString);
+    
+    if (dateEntries.length > 0) {
+      setSelectedDate(dateString);
+      setSelectedDateEntries(dateEntries);
+      setShowDateDetails(true);
+    }
+  };
+
+  // 달력 날짜 생성
+  const generateCalendarDays = () => {
+    const days = [];
+    
+    // 이전 달의 빈 칸들
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push(<div key={`empty-${i}`} className="h-12"></div>);
+    }
+    
+    // 현재 달의 날짜들
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const entriesForDate = getWorkoutEntriesForDate(dateString);
+      const hasWorkout = entriesForDate.length > 0;
+      const isToday = new Date().toDateString() === new Date(dateString).toDateString();
+      
+      days.push(
+        <div
+          key={day}
+          className={`h-12 flex items-center justify-center relative cursor-pointer transition-colors
+            ${hasWorkout ? 'bg-green-100 text-green-800 font-semibold' : 'text-gray-700 hover:bg-gray-100'}
+            ${isToday ? 'ring-2 ring-blue-500' : ''}
+            rounded-lg
+          `}
+          onClick={() => handleDateClick(day)}
+        >
+          <span>{day}</span>
+          {hasWorkout && (
+            <div className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+          )}
+          {entriesForDate.length > 1 && (
+            <div className="absolute bottom-1 left-1 text-xs bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
+              {entriesForDate.length}
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    return days;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', { 
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'long'
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-md mx-auto space-y-6">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between py-6">
+          <Link to="/">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              홈으로
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-800">월간 히스토리</h1>
+          <div></div>
+        </div>
+
+        {/* 달력 헤더 */}
+        <Card className="shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between">
+              <Button variant="ghost" size="sm" onClick={goToPreviousMonth}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5 text-purple-600" />
+                <span className="text-lg font-semibold">
+                  {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
+                </span>
+              </div>
+              
+              <Button variant="ghost" size="sm" onClick={goToNextMonth}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          
+          <CardContent>
+            {/* 요일 헤더 */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
+                <div key={day} className={`h-8 flex items-center justify-center text-sm font-medium
+                  ${index === 0 ? 'text-red-500' : index === 6 ? 'text-blue-500' : 'text-gray-600'}
+                `}>
+                  {day}
+                </div>
+              ))}
+            </div>
+            
+            {/* 달력 본체 */}
+            <div className="grid grid-cols-7 gap-1">
+              {generateCalendarDays()}
+            </div>
+            
+            {/* 범례 */}
+            <div className="mt-4 flex items-center justify-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-green-100 rounded border"></div>
+                <span>운동한 날</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span>운동 기록</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 월간 통계 */}
+        <Card className="shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">이번 달 통계</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {workoutEntries.filter(entry => {
+                    const entryDate = new Date(entry.date);
+                    return entryDate.getMonth() === currentDate.getMonth() && 
+                           entryDate.getFullYear() === currentDate.getFullYear();
+                  }).length}
+                </div>
+                <div className="text-sm text-gray-600">총 운동 횟수</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {new Set(workoutEntries.filter(entry => {
+                    const entryDate = new Date(entry.date);
+                    return entryDate.getMonth() === currentDate.getMonth() && 
+                           entryDate.getFullYear() === currentDate.getFullYear();
+                  }).map(entry => entry.date)).size}
+                </div>
+                <div className="text-sm text-gray-600">운동한 날</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 날짜별 상세 정보 모달 */}
+        <Dialog open={showDateDetails} onOpenChange={setShowDateDetails}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                {formatDate(selectedDate)}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {selectedDateEntries.map((entry) => (
+                <div key={entry.id} className="border rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-800 mb-2">{entry.exerciseName}</h3>
+                  
+                  {entry.comment && (
+                    <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>
+                  )}
+                  
+                  {entry.imageUrl && (
+                    <img 
+                      src={entry.imageUrl} 
+                      alt="운동 인증" 
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                  )}
+                  
+                  <div className="text-xs text-gray-500 mt-2">
+                    작성자: {entry.userName || '나'}
+                  </div>
+                </div>
+              ))}
+              
+              {selectedDateEntries.length === 0 && (
+                <p className="text-center text-gray-500 py-8">
+                  해당 날짜에 운동 기록이 없습니다.
+                </p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
+};
+
+export default Calendar;
