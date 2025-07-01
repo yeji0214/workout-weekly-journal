@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, ArrowLeft, Crown, UserMinus, Vote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface Team {
   id: string;
@@ -51,6 +51,8 @@ interface WorkoutEntry {
 }
 
 const Teams = () => {
+  const { toast } = useToast();
+  
   const [teams, setTeams] = useState<Team[]>([]);
   const [currentTeam, setCurrentTeam] = useState<Team | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -224,7 +226,15 @@ const Teams = () => {
       
       const updatedTeams = [...teams, newTeam];
       setTeams(updatedTeams);
+      setCurrentTeam(newTeam);
       localStorage.setItem('teams', JSON.stringify(updatedTeams));
+      localStorage.setItem('currentTeam', JSON.stringify(newTeam));
+      
+      // 알림 표시
+      toast({
+        title: "팀 생성 완료!",
+        description: `${newTeam.name} 팀의 팀장이 되었습니다.`,
+      });
       
       // 폼 리셋
       setTeamName('');
@@ -236,7 +246,11 @@ const Teams = () => {
 
   const handleJoinTeam = (team: Team) => {
     if (currentTeam) {
-      alert('이미 팀에 속해있습니다. 팀을 나가고 다른 팀에 참여해주세요.');
+      toast({
+        title: "참여 불가",
+        description: "이미 팀에 속해있습니다. 팀을 나가고 다른 팀에 참여해주세요.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -254,10 +268,18 @@ const Teams = () => {
       return t;
     });
     
+    const joinedTeam = { ...team, members: [...team.members, newMember] };
+    
     setTeams(updatedTeams);
-    setCurrentTeam({ ...team, members: [...team.members, newMember] });
+    setCurrentTeam(joinedTeam);
     localStorage.setItem('teams', JSON.stringify(updatedTeams));
-    localStorage.setItem('currentTeam', JSON.stringify({ ...team, members: [...team.members, newMember] }));
+    localStorage.setItem('currentTeam', JSON.stringify(joinedTeam));
+    
+    // 알림 표시
+    toast({
+      title: "팀 참여 완료!",
+      description: `${team.name} 팀에 참여했습니다.`,
+    });
   };
 
   const handleLeaveTeam = () => {
@@ -288,6 +310,12 @@ const Teams = () => {
     setCurrentTeam(null);
     localStorage.setItem('teams', JSON.stringify(updatedTeams));
     localStorage.removeItem('currentTeam');
+    
+    // 알림 표시
+    toast({
+      title: "팀 탈퇴 완료",
+      description: "팀에서 나왔습니다.",
+    });
     
     // 팀이 비어있으면 삭제
     const updatedTeam = updatedTeams.find(t => t.id === currentTeam.id);
@@ -394,18 +422,11 @@ const Teams = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="p-4">
       <div className="max-w-md mx-auto space-y-6">
         {/* 헤더 */}
-        <div className="flex items-center justify-between py-6">
-          <Link to="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              홈으로
-            </Button>
-          </Link>
+        <div className="text-center py-6">
           <h1 className="text-2xl font-bold text-gray-800">팀 관리</h1>
-          <div></div>
         </div>
 
         {/* 현재 팀 정보 */}

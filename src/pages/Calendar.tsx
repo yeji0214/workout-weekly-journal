@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Link } from 'react-router-dom';
 
 interface WorkoutEntry {
   id: string;
@@ -115,18 +113,11 @@ const Calendar = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="p-4">
       <div className="max-w-md mx-auto space-y-6">
         {/* 헤더 */}
-        <div className="flex items-center justify-between py-6">
-          <Link to="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              홈으로
-            </Button>
-          </Link>
+        <div className="text-center py-6">
           <h1 className="text-2xl font-bold text-gray-800">월간 히스토리</h1>
-          <div></div>
         </div>
 
         {/* 달력 헤더 */}

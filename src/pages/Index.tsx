@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Camera, Target, Calendar, Trophy, Plus, Eye, Users } from 'lucide-react';
+import { Camera, Target, Calendar, Trophy, Plus, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Link } from 'react-router-dom';
 
 interface WorkoutEntry {
   id: string;
@@ -175,28 +173,12 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="p-4">
       <div className="max-w-md mx-auto space-y-6">
         {/* 헤더 */}
         <div className="text-center py-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">🏋️‍♀️ 운동 다이어리</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">🏋️‍♀️ Sweat Together</h1>
           <p className="text-gray-600">주간 운동 챌린지</p>
-          
-          {/* 네비게이션 */}
-          <div className="flex justify-center gap-4 mt-4">
-            <Link to="/calendar">
-              <Button variant="outline" size="sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                월간 히스토리
-              </Button>
-            </Link>
-            <Link to="/teams">
-              <Button variant="outline" size="sm">
-                <Users className="h-4 w-4 mr-2" />
-                팀 관리
-              </Button>
-            </Link>
-          </div>
         </div>
 
         {/* 현재 팀 정보 */}
