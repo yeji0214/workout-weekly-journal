@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { Camera, Target, Calendar, Trophy, Plus } from 'lucide-react';
+import { Camera, Target, Calendar, Trophy, Plus, X, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface WorkoutEntry {
   id: string;
@@ -33,6 +33,11 @@ const Index = () => {
   const [comment, setComment] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+
+  // 날짜별 상세 정보 모달 상태
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDateEntries, setSelectedDateEntries] = useState<WorkoutEntry[]>([]);
+  const [showDateDetails, setShowDateDetails] = useState(false);
 
   // 로컬스토리지에서 데이터 불러오기
   useEffect(() => {
@@ -90,9 +95,9 @@ const Index = () => {
     }
   };
 
-  // 운동 인증 추가
+  // 운동 인증 추가 (사진 필수)
   const handleAddWorkout = () => {
-    if (exerciseName.trim()) {
+    if (exerciseName.trim() && selectedImage && imagePreview) {
       const newEntry: WorkoutEntry = {
         id: Date.now().toString(),
         date: new Date().toISOString().split('T')[0],
@@ -110,6 +115,14 @@ const Index = () => {
       setImagePreview('');
       setShowAddForm(false);
     }
+  };
+
+  // 날짜별 운동 기록 보기
+  const handleDateClick = (date: string) => {
+    const dateEntries = workoutEntries.filter(entry => entry.date === date);
+    setSelectedDate(date);
+    setSelectedDateEntries(dateEntries);
+    setShowDateDetails(true);
   };
 
   // 이번 주 인증 개수 계산
@@ -226,13 +239,14 @@ const Index = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  인증 사진 (선택사항)
+                  인증 사진 <span className="text-red-500">*필수</span>
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageSelect}
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  required
                 />
                 {imagePreview && (
                   <div className="mt-3">
@@ -243,12 +257,15 @@ const Index = () => {
                     />
                   </div>
                 )}
+                {!selectedImage && (
+                  <p className="text-sm text-red-500 mt-1">운동 인증을 위해 사진을 반드시 첨부해주세요.</p>
+                )}
               </div>
               
               <div className="flex gap-2">
                 <Button 
                   onClick={handleAddWorkout}
-                  disabled={!exerciseName.trim()}
+                  disabled={!exerciseName.trim() || !selectedImage}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
                   인증 완료
@@ -277,10 +294,17 @@ const Index = () => {
             <CardContent>
               <div className="space-y-4">
                 {workoutEntries.slice(0, 10).map((entry) => (
-                  <div key={entry.id} className="border rounded-lg p-4 bg-white">
+                  <div 
+                    key={entry.id} 
+                    className="border rounded-lg p-4 bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => handleDateClick(entry.date)}
+                  >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-gray-800">{entry.exerciseName}</h3>
-                      <span className="text-sm text-gray-500">{formatDate(entry.date)}</span>
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm text-gray-500">{formatDate(entry.date)}</span>
+                      </div>
                     </div>
                     
                     {entry.comment && (
@@ -317,6 +341,43 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* 날짜별 상세 정보 모달 */}
+        <Dialog open={showDateDetails} onOpenChange={setShowDateDetails}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {formatDate(selectedDate)} 운동 기록
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedDateEntries.map((entry) => (
+                <div key={entry.id} className="border rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-800 mb-2">{entry.exerciseName}</h3>
+                  
+                  {entry.comment && (
+                    <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>
+                  )}
+                  
+                  {entry.imageUrl && (
+                    <img 
+                      src={entry.imageUrl} 
+                      alt="운동 인증" 
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                  )}
+                </div>
+              ))}
+              
+              {selectedDateEntries.length === 0 && (
+                <p className="text-center text-gray-500 py-8">
+                  해당 날짜에 운동 기록이 없습니다.
+                </p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
