@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, ArrowLeft, Crown, UserMinus, Vote, Medal, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +47,7 @@ interface WorkoutEntry {
   date: string;
   exerciseName: string;
   comment: string;
-  duration: number;
+  duration?: number;
   imageUrl?: string;
   userId?: string;
   userName?: string;
@@ -75,8 +76,13 @@ const Teams = () => {
 
   // 현재 사용자 ID (실제로는 로그인 시스템에서 가져와야 함)
   const currentUserId = 'current-user';
+  const currentUserName = '나';
 
   useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = () => {
     // 목 데이터 로드
     loadMockData();
     
@@ -86,18 +92,30 @@ const Teams = () => {
     const savedVotes = localStorage.getItem('activeVotes');
     
     if (savedTeams) {
-      setTeams(JSON.parse(savedTeams));
+      const parsedTeams = JSON.parse(savedTeams);
+      setTeams(parsedTeams);
+      
+      // 현재 사용자가 속한 팀 찾기
+      const userTeam = parsedTeams.find((team: Team) => 
+        team.members.some(member => member.id === currentUserId)
+      );
+      
+      if (userTeam) {
+        setCurrentTeam(userTeam);
+        localStorage.setItem('currentTeam', JSON.stringify(userTeam));
+      } else {
+        localStorage.removeItem('currentTeam');
+        setCurrentTeam(null);
+      }
     }
-    if (savedCurrentTeam) {
-      setCurrentTeam(JSON.parse(savedCurrentTeam));
-    }
+    
     if (savedVotes) {
       setActiveVotes(JSON.parse(savedVotes));
     }
     
     // 만료된 투표 처리
     checkExpiredVotes();
-  }, []);
+  };
 
   const loadMockData = () => {
     const mockTeams: Team[] = [
@@ -135,6 +153,66 @@ const Teams = () => {
       localStorage.setItem('teams', JSON.stringify(mockTeams));
     }
   };
+
+  // 사용자 운동 데이터 동기화
+  const syncUserWorkoutData = () => {
+    const savedEntries = localStorage.getItem('workoutEntries');
+    if (!savedEntries) return 0;
+    
+    const entries: WorkoutEntry[] = JSON.parse(savedEntries);
+    const weekStart = getWeekStart();
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    // 현재 사용자의 이번주 운동 횟수 계산
+    const currentUserWeeklyCount = entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate >= new Date(weekStart) && 
+             entryDate <= weekEnd && 
+             (!entry.userId || entry.userId === currentUserId);
+    }).length;
+    
+    return currentUserWeeklyCount;
+  };
+
+  // 이번 주 시작일 계산
+  const getWeekStart = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day;
+    return new Date(today.setDate(diff)).toISOString().split('T')[0];
+  };
+
+  // 팀과 현재 사용자 데이터 동기화
+  useEffect(() => {
+    if (currentTeam) {
+      const currentUserWeeklyCount = syncUserWorkoutData();
+      
+      const updatedTeams = teams.map(team => {
+        if (team.id === currentTeam.id) {
+          const updatedMembers = team.members.map(member => {
+            if (member.id === currentUserId) {
+              return { ...member, workoutCount: currentUserWeeklyCount };
+            }
+            return member;
+          });
+          return { ...team, members: updatedMembers };
+        }
+        return team;
+      });
+      
+      if (JSON.stringify(updatedTeams) !== JSON.stringify(teams)) {
+        setTeams(updatedTeams);
+        localStorage.setItem('teams', JSON.stringify(updatedTeams));
+        
+        const updatedCurrentTeam = updatedTeams.find(t => t.id === currentTeam.id);
+        if (updatedCurrentTeam) {
+          setCurrentTeam(updatedCurrentTeam);
+          localStorage.setItem('currentTeam', JSON.stringify(updatedCurrentTeam));
+        }
+      }
+    }
+  }, []);
 
   const checkExpiredVotes = () => {
     const now = new Date();
@@ -210,6 +288,16 @@ const Teams = () => {
 
   const handleCreateTeam = () => {
     if (teamName.trim() && teamDescription.trim() && weeklyGoal) {
+      // 이미 팀에 속해있는지 확인
+      if (currentTeam) {
+        toast({
+          title: "팀 생성 불가",
+          description: "이미 팀에 속해있습니다. 현재 팀을 나가고 새 팀을 만들어주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const newTeam: Team = {
         id: `team-${Date.now()}`,
         name: teamName.trim(),
@@ -217,9 +305,9 @@ const Teams = () => {
         weeklyGoal: parseInt(weeklyGoal),
         members: [{ 
           id: currentUserId, 
-          name: '나', 
+          name: currentUserName, 
           joinedAt: new Date().toISOString(), 
-          workoutCount: 0 
+          workoutCount: syncUserWorkoutData()
         }],
         createdBy: currentUserId,
         createdAt: new Date().toISOString(),
@@ -256,11 +344,21 @@ const Teams = () => {
       return;
     }
     
+    // 이미 해당 팀의 멤버인지 확인
+    if (team.members.some(member => member.id === currentUserId)) {
+      toast({
+        title: "이미 참여 중",
+        description: "이미 해당 팀에 참여하고 있습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const newMember: TeamMember = {
       id: currentUserId,
-      name: '나',
+      name: currentUserName,
       joinedAt: new Date().toISOString(),
-      workoutCount: 0
+      workoutCount: syncUserWorkoutData()
     };
     
     const updatedTeams = teams.map(t => {
@@ -270,10 +368,10 @@ const Teams = () => {
       return t;
     });
     
-    const joinedTeam = { ...team, members: [...team.members, newMember] };
+    const joinedTeam = updatedTeams.find(t => t.id === team.id);
     
     setTeams(updatedTeams);
-    setCurrentTeam(joinedTeam);
+    setCurrentTeam(joinedTeam || null);
     localStorage.setItem('teams', JSON.stringify(updatedTeams));
     localStorage.setItem('currentTeam', JSON.stringify(joinedTeam));
     
@@ -582,61 +680,6 @@ const Teams = () => {
     return allEntries.filter(entry => entry.userId === memberId);
   };
 
-  const getWeekStart = () => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day;
-    return new Date(today.setDate(diff)).toISOString().split('T')[0];
-  };
-
-  const syncCurrentUserWorkoutData = () => {
-    if (!currentTeam) return;
-    
-    const savedEntries = localStorage.getItem('workoutEntries');
-    if (!savedEntries) return;
-    
-    const entries: WorkoutEntry[] = JSON.parse(savedEntries);
-    const weekStart = getWeekStart();
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
-    
-    // 현재 사용자의 이번주 운동 횟수 계산
-    const currentUserWeeklyCount = entries.filter(entry => {
-      const entryDate = new Date(entry.date);
-      return entryDate >= new Date(weekStart) && 
-             entryDate <= weekEnd && 
-             entry.userId === currentUserId;
-    }).length;
-    
-    // 팀 멤버 정보 업데이트
-    const updatedTeams = teams.map(team => {
-      if (team.id === currentTeam.id) {
-        const updatedMembers = team.members.map(member => {
-          if (member.id === currentUserId) {
-            return { ...member, workoutCount: currentUserWeeklyCount };
-          }
-          return member;
-        });
-        return { ...team, members: updatedMembers };
-      }
-      return team;
-    });
-    
-    setTeams(updatedTeams);
-    localStorage.setItem('teams', JSON.stringify(updatedTeams));
-    
-    // 현재 팀 정보도 업데이트
-    const updatedCurrentTeam = updatedTeams.find(t => t.id === currentTeam.id);
-    if (updatedCurrentTeam) {
-      setCurrentTeam(updatedCurrentTeam);
-      localStorage.setItem('currentTeam', JSON.stringify(updatedCurrentTeam));
-    }
-  };
-
-  useEffect(() => {
-    syncCurrentUserWorkoutData();
-  }, [teams, currentTeam]);
-
   const getRankedMembers = (members: TeamMember[]) => {
     return [...members].sort((a, b) => b.workoutCount - a.workoutCount);
   };
@@ -824,7 +867,6 @@ const Teams = () => {
           </DialogContent>
         </Dialog>
 
-        {/* 팀 상세 모달 */}
         <Dialog open={showTeamDetail} onOpenChange={setShowTeamDetail}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -922,7 +964,6 @@ const Teams = () => {
           </DialogContent>
         </Dialog>
 
-        {/* 투표 생성 모달 */}
         <Dialog open={showVoteForm} onOpenChange={setShowVoteForm}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -978,7 +1019,6 @@ const Teams = () => {
           </DialogContent>
         </Dialog>
 
-        {/* 멤버 상세 모달 */}
         <Dialog open={showMemberDetail} onOpenChange={setShowMemberDetail}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -1007,10 +1047,12 @@ const Teams = () => {
                             {new Date(entry.date).toLocaleDateString('ko-KR')}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Clock className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm text-blue-600">{entry.duration}분</span>
-                        </div>
+                        {entry.duration && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <Clock className="h-4 w-4 text-blue-500" />
+                            <span className="text-sm text-blue-600">{entry.duration}분</span>
+                          </div>
+                        )}
                         {entry.comment && (
                           <p className="text-sm text-gray-600 mb-2">{entry.comment}</p>
                         )}

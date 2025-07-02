@@ -11,7 +11,7 @@ interface WorkoutEntry {
   date: string;
   exerciseName: string;
   comment: string;
-  duration: number;
+  duration?: number;
   imageUrl?: string;
   userId?: string;
   userName?: string;
@@ -221,10 +221,12 @@ const Calendar = () => {
                   <div key={entry.id} className="border rounded-lg p-4">
                     <h3 className="font-semibold text-gray-800 mb-2">{entry.exerciseName}</h3>
                     
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-4 w-4 text-blue-500" />
-                      <span className="text-sm text-blue-600">{entry.duration}분</span>
-                    </div>
+                    {entry.duration && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm text-blue-600">{entry.duration}분</span>
+                      </div>
+                    )}
                     
                     {entry.comment && (
                       <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>

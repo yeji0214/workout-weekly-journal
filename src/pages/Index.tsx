@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Camera, Target, Calendar, Trophy, Plus, Eye, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +15,7 @@ interface WorkoutEntry {
   date: string;
   exerciseName: string;
   comment: string;
-  duration: number; // 운동 시간 (분)
+  duration?: number; // 운동 시간 (분) - 선택사항
   imageUrl?: string;
   userId?: string;
   userName?: string;
@@ -119,19 +120,23 @@ const Index = () => {
     }
   };
 
-  // 운동 인증 추가 (사진 필수)
+  // 운동 인증 추가 (사진 필수, 시간 선택사항)
   const handleAddWorkout = () => {
-    if (exerciseName.trim() && selectedImage && imagePreview && duration) {
+    if (exerciseName.trim() && selectedImage && imagePreview) {
       const newEntry: WorkoutEntry = {
         id: Date.now().toString(),
         date: new Date().toISOString().split('T')[0],
         exerciseName: exerciseName.trim(),
         comment: comment.trim(),
-        duration: parseInt(duration),
         imageUrl: imagePreview,
         userId: 'current-user',
         userName: '나'
       };
+      
+      // 운동 시간이 입력된 경우에만 추가
+      if (duration && parseInt(duration) > 0) {
+        newEntry.duration = parseInt(duration);
+      }
       
       setWorkoutEntries(prev => [newEntry, ...prev]);
       
@@ -279,7 +284,7 @@ const Index = () => {
               <div className="flex gap-2">
                 <Input
                   type="number"
-                  placeholder="운동 시간 (분)"
+                  placeholder="운동 시간 (분, 선택사항)"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                   className="flex-1"
@@ -325,7 +330,7 @@ const Index = () => {
               <div className="flex gap-2">
                 <Button 
                   onClick={handleAddWorkout}
-                  disabled={!exerciseName.trim() || !selectedImage || !duration}
+                  disabled={!exerciseName.trim() || !selectedImage}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
                   인증 완료
@@ -368,10 +373,12 @@ const Index = () => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="h-4 w-4 text-blue-500" />
-                        <span className="text-sm text-blue-600">{entry.duration}분</span>
-                      </div>
+                      {entry.duration && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="h-4 w-4 text-blue-500" />
+                          <span className="text-sm text-blue-600">{entry.duration}분</span>
+                        </div>
+                      )}
                       
                       {entry.comment && (
                         <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>
@@ -425,10 +432,12 @@ const Index = () => {
                   <p className="text-sm text-gray-500">{formatDate(selectedEntry.date)}</p>
                 </div>
                 
-                <div className="flex items-center justify-center gap-2 bg-blue-50 p-3 rounded-lg">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  <span className="text-blue-800 font-medium">{selectedEntry.duration}분</span>
-                </div>
+                {selectedEntry.duration && (
+                  <div className="flex items-center justify-center gap-2 bg-blue-50 p-3 rounded-lg">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    <span className="text-blue-800 font-medium">{selectedEntry.duration}분</span>
+                  </div>
+                )}
                 
                 {selectedEntry.comment && (
                   <div className="bg-gray-50 p-3 rounded-lg">
