@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, ArrowLeft, Crown, UserMinus, Vote, Medal, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -489,9 +490,17 @@ const Teams = () => {
     
     // 이번 주 날짜 계산
     const weekStart = getWeekStart();
+    const today = new Date();
+    
     const getThisWeekDate = (daysBack: number) => {
       const date = new Date(weekStart);
-      date.setDate(date.getDate() + (6 - daysBack));
+      date.setDate(date.getDate() + daysBack);
+      
+      // 미래 날짜가 되지 않도록 오늘 날짜와 비교
+      if (date > today) {
+        return today.toISOString().split('T')[0];
+      }
+      
       return date.toISOString().split('T')[0];
     };
     
@@ -500,7 +509,7 @@ const Teams = () => {
       'user-1': [
         {
           id: 'mock-1-1',
-          date: getThisWeekDate(0),
+          date: getThisWeekDate(1),
           exerciseName: '벤치프레스',
           comment: '오늘은 개인 기록 갱신! 100kg 달성했어요.',
           duration: 60,
@@ -510,7 +519,7 @@ const Teams = () => {
         },
         {
           id: 'mock-1-2',
-          date: getThisWeekDate(1),
+          date: getThisWeekDate(2),
           exerciseName: '데드리프트',
           comment: '하체 운동 완료. 힘들었지만 뿌듯해요!',
           duration: 45,
@@ -520,7 +529,7 @@ const Teams = () => {
         },
         {
           id: 'mock-1-3',
-          date: getThisWeekDate(2),
+          date: getThisWeekDate(3),
           exerciseName: '스쿼트',
           comment: '다리가 후들후들... 그래도 완주!',
           duration: 50,
@@ -530,7 +539,7 @@ const Teams = () => {
         },
         {
           id: 'mock-1-4',
-          date: getThisWeekDate(3),
+          date: getThisWeekDate(4),
           exerciseName: '런닝머신',
           comment: '30분 달리기 완성! 땀이 뻘뻘',
           duration: 30,
@@ -542,7 +551,7 @@ const Teams = () => {
       'user-2': [
         {
           id: 'mock-2-1',
-          date: getThisWeekDate(0),
+          date: getThisWeekDate(1),
           exerciseName: '요가',
           comment: '아침 요가로 하루를 시작해요~',
           duration: 40,
@@ -552,7 +561,7 @@ const Teams = () => {
         },
         {
           id: 'mock-2-2',
-          date: getThisWeekDate(1),
+          date: getThisWeekDate(2),
           exerciseName: '필라테스',
           comment: '코어 운동 집중! 속근육이 타는 느낌',
           duration: 50,
@@ -562,7 +571,7 @@ const Teams = () => {
         },
         {
           id: 'mock-2-3',
-          date: getThisWeekDate(2),
+          date: getThisWeekDate(3),
           exerciseName: '홈트레이닝',
           comment: '집에서 간단하게 운동 완료',
           duration: 25,
@@ -626,7 +635,7 @@ const Teams = () => {
       'user-4': [
         {
           id: 'mock-4-1',
-          date: getThisWeekDate(0),
+          date: getThisWeekDate(1),
           exerciseName: '홈트레이닝',
           comment: '유튜브 보면서 홈트 완료!',
           duration: 30,
@@ -636,7 +645,7 @@ const Teams = () => {
         },
         {
           id: 'mock-4-2',
-          date: getThisWeekDate(1),
+          date: getThisWeekDate(2),
           exerciseName: '스트레칭',
           comment: '몸이 많이 뻣뻣했는데 시원해요',
           duration: 20,
@@ -776,19 +785,7 @@ const Teams = () => {
         {/* 팀 목록 */}
         <Card className="shadow-lg">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between">
-              <span>모든 팀</span>
-              {!currentTeam && (
-                <Button 
-                  size="sm" 
-                  onClick={() => setShowCreateForm(true)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  팀 만들기
-                </Button>
-              )}
-            </CardTitle>
+            <CardTitle>모든 팀</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -874,6 +871,7 @@ const Teams = () => {
           </DialogContent>
         </Dialog>
 
+        {/* 팀 상세 모달 */}
         <Dialog open={showTeamDetail} onOpenChange={setShowTeamDetail}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -972,6 +970,7 @@ const Teams = () => {
           </DialogContent>
         </Dialog>
 
+        {/* 퇴출 투표 모달 */}
         <Dialog open={showVoteForm} onOpenChange={setShowVoteForm}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -1027,6 +1026,7 @@ const Teams = () => {
           </DialogContent>
         </Dialog>
 
+        {/* 팀원 운동 기록 모달 */}
         <Dialog open={showMemberDetail} onOpenChange={setShowMemberDetail}>
           <DialogContent className="max-w-md bg-white/95 backdrop-blur-sm">
             <DialogHeader>
