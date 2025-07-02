@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, ArrowLeft, Crown, UserMinus, Vote, Medal, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -154,6 +153,14 @@ const Teams = () => {
     }
   };
 
+  // 이번 주 시작일 계산
+  const getWeekStart = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day;
+    return new Date(today.setDate(diff));
+  };
+
   // 사용자 운동 데이터 동기화
   const syncUserWorkoutData = () => {
     const savedEntries = localStorage.getItem('workoutEntries');
@@ -167,20 +174,12 @@ const Teams = () => {
     // 현재 사용자의 이번주 운동 횟수 계산
     const currentUserWeeklyCount = entries.filter(entry => {
       const entryDate = new Date(entry.date);
-      return entryDate >= new Date(weekStart) && 
+      return entryDate >= weekStart && 
              entryDate <= weekEnd && 
              (!entry.userId || entry.userId === currentUserId);
     }).length;
     
     return currentUserWeeklyCount;
-  };
-
-  // 이번 주 시작일 계산
-  const getWeekStart = () => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day;
-    return new Date(today.setDate(diff)).toISOString().split('T')[0];
   };
 
   // 팀과 현재 사용자 데이터 동기화
@@ -488,12 +487,20 @@ const Teams = () => {
       entries = JSON.parse(savedEntries);
     }
     
-    // 목 데이터 추가 - 각 팀원별로 운동 횟수만큼의 기록 생성
+    // 이번 주 날짜 계산
+    const weekStart = getWeekStart();
+    const getThisWeekDate = (daysBack: number) => {
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + (6 - daysBack));
+      return date.toISOString().split('T')[0];
+    };
+    
+    // 목 데이터 추가 - 각 팀원별로 운동 횟수만큼의 기록 생성 (이번 주 날짜로)
     const mockEntriesMap: { [key: string]: WorkoutEntry[] } = {
       'user-1': [
         {
           id: 'mock-1-1',
-          date: '2024-01-15',
+          date: getThisWeekDate(0),
           exerciseName: '벤치프레스',
           comment: '오늘은 개인 기록 갱신! 100kg 달성했어요.',
           duration: 60,
@@ -503,7 +510,7 @@ const Teams = () => {
         },
         {
           id: 'mock-1-2',
-          date: '2024-01-14',
+          date: getThisWeekDate(1),
           exerciseName: '데드리프트',
           comment: '하체 운동 완료. 힘들었지만 뿌듯해요!',
           duration: 45,
@@ -513,7 +520,7 @@ const Teams = () => {
         },
         {
           id: 'mock-1-3',
-          date: '2024-01-13',
+          date: getThisWeekDate(2),
           exerciseName: '스쿼트',
           comment: '다리가 후들후들... 그래도 완주!',
           duration: 50,
@@ -523,7 +530,7 @@ const Teams = () => {
         },
         {
           id: 'mock-1-4',
-          date: '2024-01-12',
+          date: getThisWeekDate(3),
           exerciseName: '런닝머신',
           comment: '30분 달리기 완성! 땀이 뻘뻘',
           duration: 30,
@@ -535,7 +542,7 @@ const Teams = () => {
       'user-2': [
         {
           id: 'mock-2-1',
-          date: '2024-01-15',
+          date: getThisWeekDate(0),
           exerciseName: '요가',
           comment: '아침 요가로 하루를 시작해요~',
           duration: 40,
@@ -545,7 +552,7 @@ const Teams = () => {
         },
         {
           id: 'mock-2-2',
-          date: '2024-01-14',
+          date: getThisWeekDate(1),
           exerciseName: '필라테스',
           comment: '코어 운동 집중! 속근육이 타는 느낌',
           duration: 50,
@@ -555,7 +562,7 @@ const Teams = () => {
         },
         {
           id: 'mock-2-3',
-          date: '2024-01-13',
+          date: getThisWeekDate(2),
           exerciseName: '홈트레이닝',
           comment: '집에서 간단하게 운동 완료',
           duration: 25,
@@ -567,7 +574,7 @@ const Teams = () => {
       'user-3': [
         {
           id: 'mock-3-1',
-          date: '2024-01-15',
+          date: getThisWeekDate(0),
           exerciseName: '크로스핏',
           comment: '오늘 WOD 완료! 정말 힘들었어요',
           duration: 45,
@@ -577,7 +584,7 @@ const Teams = () => {
         },
         {
           id: 'mock-3-2',
-          date: '2024-01-14',
+          date: getThisWeekDate(1),
           exerciseName: '수영',
           comment: '1km 완주! 물놀이 아닌 진짜 수영',
           duration: 60,
@@ -587,7 +594,7 @@ const Teams = () => {
         },
         {
           id: 'mock-3-3',
-          date: '2024-01-13',
+          date: getThisWeekDate(2),
           exerciseName: '복싱',
           comment: '스트레스 해소용 복싱! 시원해요',
           duration: 55,
@@ -597,7 +604,7 @@ const Teams = () => {
         },
         {
           id: 'mock-3-4',
-          date: '2024-01-12',
+          date: getThisWeekDate(3),
           exerciseName: '클라이밍',
           comment: '실내 클라이밍 도전! 팔이 아파요',
           duration: 70,
@@ -607,7 +614,7 @@ const Teams = () => {
         },
         {
           id: 'mock-3-5',
-          date: '2024-01-11',
+          date: getThisWeekDate(4),
           exerciseName: '테니스',
           comment: '친구와 테니스 한 게임! 재밌어요',
           duration: 90,
@@ -619,7 +626,7 @@ const Teams = () => {
       'user-4': [
         {
           id: 'mock-4-1',
-          date: '2024-01-15',
+          date: getThisWeekDate(0),
           exerciseName: '홈트레이닝',
           comment: '유튜브 보면서 홈트 완료!',
           duration: 30,
@@ -629,7 +636,7 @@ const Teams = () => {
         },
         {
           id: 'mock-4-2',
-          date: '2024-01-14',
+          date: getThisWeekDate(1),
           exerciseName: '스트레칭',
           comment: '몸이 많이 뻣뻣했는데 시원해요',
           duration: 20,
@@ -641,7 +648,7 @@ const Teams = () => {
       'user-5': [
         {
           id: 'mock-5-1',
-          date: '2024-01-15',
+          date: getThisWeekDate(0),
           exerciseName: '조깅',
           comment: '아침 조깅 30분! 상쾌한 시작',
           duration: 30,
@@ -651,7 +658,7 @@ const Teams = () => {
         },
         {
           id: 'mock-5-2',
-          date: '2024-01-14',
+          date: getThisWeekDate(1),
           exerciseName: '푸시업',
           comment: '100개 도전! 50개까지만...',
           duration: 15,
@@ -661,7 +668,7 @@ const Teams = () => {
         },
         {
           id: 'mock-5-3',
-          date: '2024-01-13',
+          date: getThisWeekDate(2),
           exerciseName: '턱걸이',
           comment: '턱걸이 10개 완성! 팔이 떨려요',
           duration: 10,
@@ -953,9 +960,10 @@ const Teams = () => {
                       variant="outline"
                       onClick={() => setShowVoteForm(true)}
                       className="w-full"
+                      disabled={currentTeam.members.length <= 1}
                     >
                       <UserMinus className="h-4 w-4 mr-2" />
-                      퇴출 투표 열기
+                      {currentTeam.members.length <= 1 ? '퇴출할 팀원이 없습니다' : '퇴출 투표 열기'}
                     </Button>
                   </div>
                 )}
@@ -1020,7 +1028,7 @@ const Teams = () => {
         </Dialog>
 
         <Dialog open={showMemberDetail} onOpenChange={setShowMemberDetail}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md bg-white/95 backdrop-blur-sm">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
