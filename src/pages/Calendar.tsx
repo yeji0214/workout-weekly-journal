@@ -1,14 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface WorkoutEntry {
   id: string;
   date: string;
   exerciseName: string;
   comment: string;
+  duration: number;
   imageUrl?: string;
   userId?: string;
   userName?: string;
@@ -212,35 +215,42 @@ const Calendar = () => {
                 {formatDate(selectedDate)}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {selectedDateEntries.map((entry) => (
-                <div key={entry.id} className="border rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2">{entry.exerciseName}</h3>
-                  
-                  {entry.comment && (
-                    <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>
-                  )}
-                  
-                  {entry.imageUrl && (
-                    <img 
-                      src={entry.imageUrl} 
-                      alt="운동 인증" 
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                  )}
-                  
-                  <div className="text-xs text-gray-500 mt-2">
-                    작성자: {entry.userName || '나'}
+            <ScrollArea className="h-96">
+              <div className="space-y-4 pr-4">
+                {selectedDateEntries.map((entry) => (
+                  <div key={entry.id} className="border rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-800 mb-2">{entry.exerciseName}</h3>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm text-blue-600">{entry.duration}분</span>
+                    </div>
+                    
+                    {entry.comment && (
+                      <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>
+                    )}
+                    
+                    {entry.imageUrl && (
+                      <img 
+                        src={entry.imageUrl} 
+                        alt="운동 인증" 
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                    )}
+                    
+                    <div className="text-xs text-gray-500 mt-2">
+                      작성자: {entry.userName || '나'}
+                    </div>
                   </div>
-                </div>
-              ))}
-              
-              {selectedDateEntries.length === 0 && (
-                <p className="text-center text-gray-500 py-8">
-                  해당 날짜에 운동 기록이 없습니다.
-                </p>
-              )}
-            </div>
+                ))}
+                
+                {selectedDateEntries.length === 0 && (
+                  <p className="text-center text-gray-500 py-8">
+                    해당 날짜에 운동 기록이 없습니다.
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>

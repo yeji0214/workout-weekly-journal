@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, ArrowLeft, Crown, UserMinus, Vote } from 'lucide-react';
+import { Users, Plus, ArrowLeft, Crown, UserMinus, Vote, Medal, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Team {
   id: string;
@@ -45,6 +46,7 @@ interface WorkoutEntry {
   date: string;
   exerciseName: string;
   comment: string;
+  duration: number;
   imageUrl?: string;
   userId?: string;
   userName?: string;
@@ -382,34 +384,270 @@ const Teams = () => {
 
   const getMemberWorkoutEntries = (memberId: string): WorkoutEntry[] => {
     const savedEntries = localStorage.getItem('workoutEntries');
-    if (!savedEntries) return [];
+    let entries: WorkoutEntry[] = [];
+    
+    if (savedEntries) {
+      entries = JSON.parse(savedEntries);
+    }
+    
+    // 목 데이터 추가 - 각 팀원별로 운동 횟수만큼의 기록 생성
+    const mockEntriesMap: { [key: string]: WorkoutEntry[] } = {
+      'user-1': [
+        {
+          id: 'mock-1-1',
+          date: '2024-01-15',
+          exerciseName: '벤치프레스',
+          comment: '오늘은 개인 기록 갱신! 100kg 달성했어요.',
+          duration: 60,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-1',
+          userName: '김철수'
+        },
+        {
+          id: 'mock-1-2',
+          date: '2024-01-14',
+          exerciseName: '데드리프트',
+          comment: '하체 운동 완료. 힘들었지만 뿌듯해요!',
+          duration: 45,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-1',
+          userName: '김철수'
+        },
+        {
+          id: 'mock-1-3',
+          date: '2024-01-13',
+          exerciseName: '스쿼트',
+          comment: '다리가 후들후들... 그래도 완주!',
+          duration: 50,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-1',
+          userName: '김철수'
+        },
+        {
+          id: 'mock-1-4',
+          date: '2024-01-12',
+          exerciseName: '런닝머신',
+          comment: '30분 달리기 완성! 땀이 뻘뻘',
+          duration: 30,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-1',
+          userName: '김철수'
+        }
+      ],
+      'user-2': [
+        {
+          id: 'mock-2-1',
+          date: '2024-01-15',
+          exerciseName: '요가',
+          comment: '아침 요가로 하루를 시작해요~',
+          duration: 40,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-2',
+          userName: '이영희'
+        },
+        {
+          id: 'mock-2-2',
+          date: '2024-01-14',
+          exerciseName: '필라테스',
+          comment: '코어 운동 집중! 속근육이 타는 느낌',
+          duration: 50,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-2',
+          userName: '이영희'
+        },
+        {
+          id: 'mock-2-3',
+          date: '2024-01-13',
+          exerciseName: '홈트레이닝',
+          comment: '집에서 간단하게 운동 완료',
+          duration: 25,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-2',
+          userName: '이영희'
+        }
+      ],
+      'user-3': [
+        {
+          id: 'mock-3-1',
+          date: '2024-01-15',
+          exerciseName: '크로스핏',
+          comment: '오늘 WOD 완료! 정말 힘들었어요',
+          duration: 45,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-3',
+          userName: '박민수'
+        },
+        {
+          id: 'mock-3-2',
+          date: '2024-01-14',
+          exerciseName: '수영',
+          comment: '1km 완주! 물놀이 아닌 진짜 수영',
+          duration: 60,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-3',
+          userName: '박민수'
+        },
+        {
+          id: 'mock-3-3',
+          date: '2024-01-13',
+          exerciseName: '복싱',
+          comment: '스트레스 해소용 복싱! 시원해요',
+          duration: 55,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-3',
+          userName: '박민수'
+        },
+        {
+          id: 'mock-3-4',
+          date: '2024-01-12',
+          exerciseName: '클라이밍',
+          comment: '실내 클라이밍 도전! 팔이 아파요',
+          duration: 70,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-3',
+          userName: '박민수'
+        },
+        {
+          id: 'mock-3-5',
+          date: '2024-01-11',
+          exerciseName: '테니스',
+          comment: '친구와 테니스 한 게임! 재밌어요',
+          duration: 90,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-3',
+          userName: '박민수'
+        }
+      ],
+      'user-4': [
+        {
+          id: 'mock-4-1',
+          date: '2024-01-15',
+          exerciseName: '홈트레이닝',
+          comment: '유튜브 보면서 홈트 완료!',
+          duration: 30,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-4',
+          userName: '최수연'
+        },
+        {
+          id: 'mock-4-2',
+          date: '2024-01-14',
+          exerciseName: '스트레칭',
+          comment: '몸이 많이 뻣뻣했는데 시원해요',
+          duration: 20,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-4',
+          userName: '최수연'
+        }
+      ],
+      'user-5': [
+        {
+          id: 'mock-5-1',
+          date: '2024-01-15',
+          exerciseName: '조깅',
+          comment: '아침 조깅 30분! 상쾌한 시작',
+          duration: 30,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-5',
+          userName: '정대호'
+        },
+        {
+          id: 'mock-5-2',
+          date: '2024-01-14',
+          exerciseName: '푸시업',
+          comment: '100개 도전! 50개까지만...',
+          duration: 15,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-5',
+          userName: '정대호'
+        },
+        {
+          id: 'mock-5-3',
+          date: '2024-01-13',
+          exerciseName: '턱걸이',
+          comment: '턱걸이 10개 완성! 팔이 떨려요',
+          duration: 10,
+          imageUrl: '/placeholder.svg',
+          userId: 'user-5',
+          userName: '정대호'
+        }
+      ]
+    };
+    
+    const allEntries = [...entries];
+    if (mockEntriesMap[memberId]) {
+      allEntries.push(...mockEntriesMap[memberId]);
+    }
+    
+    return allEntries.filter(entry => entry.userId === memberId);
+  };
+
+  const getWeekStart = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day;
+    return new Date(today.setDate(diff)).toISOString().split('T')[0];
+  };
+
+  const syncCurrentUserWorkoutData = () => {
+    if (!currentTeam) return;
+    
+    const savedEntries = localStorage.getItem('workoutEntries');
+    if (!savedEntries) return;
     
     const entries: WorkoutEntry[] = JSON.parse(savedEntries);
+    const weekStart = getWeekStart();
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
     
-    // 목 데이터 추가
-    const mockEntries: WorkoutEntry[] = [
-      {
-        id: 'entry-1',
-        date: '2024-01-15',
-        exerciseName: '벤치프레스',
-        comment: '오늘은 개인 기록 갱신!',
-        imageUrl: '/placeholder.svg',
-        userId: 'user-1',
-        userName: '김철수'
-      },
-      {
-        id: 'entry-2',
-        date: '2024-01-14',
-        exerciseName: '스쿼트',
-        comment: '다리 운동 완료',
-        imageUrl: '/placeholder.svg',
-        userId: 'user-2',
-        userName: '이영희'
+    // 현재 사용자의 이번주 운동 횟수 계산
+    const currentUserWeeklyCount = entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate >= new Date(weekStart) && 
+             entryDate <= weekEnd && 
+             entry.userId === currentUserId;
+    }).length;
+    
+    // 팀 멤버 정보 업데이트
+    const updatedTeams = teams.map(team => {
+      if (team.id === currentTeam.id) {
+        const updatedMembers = team.members.map(member => {
+          if (member.id === currentUserId) {
+            return { ...member, workoutCount: currentUserWeeklyCount };
+          }
+          return member;
+        });
+        return { ...team, members: updatedMembers };
       }
-    ];
+      return team;
+    });
     
-    const allEntries = [...entries, ...mockEntries];
-    return allEntries.filter(entry => entry.userId === memberId);
+    setTeams(updatedTeams);
+    localStorage.setItem('teams', JSON.stringify(updatedTeams));
+    
+    // 현재 팀 정보도 업데이트
+    const updatedCurrentTeam = updatedTeams.find(t => t.id === currentTeam.id);
+    if (updatedCurrentTeam) {
+      setCurrentTeam(updatedCurrentTeam);
+      localStorage.setItem('currentTeam', JSON.stringify(updatedCurrentTeam));
+    }
+  };
+
+  useEffect(() => {
+    syncCurrentUserWorkoutData();
+  }, [teams, currentTeam]);
+
+  const getRankedMembers = (members: TeamMember[]) => {
+    return [...members].sort((a, b) => b.workoutCount - a.workoutCount);
+  };
+
+  const getRankEmoji = (rank: number) => {
+    switch (rank) {
+      case 1: return '🥇';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      default: return `${rank}위`;
+    }
   };
 
   const handleMemberClick = (member: TeamMember) => {
@@ -605,15 +843,21 @@ const Teams = () => {
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold mb-2">팀원 ({currentTeam.members.length}명)</h4>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Medal className="h-4 w-4 text-yellow-500" />
+                    팀원 랭킹 ({currentTeam.members.length}명)
+                  </h4>
                   <div className="space-y-2">
-                    {currentTeam.members.map((member) => (
+                    {getRankedMembers(currentTeam.members).map((member, index) => (
                       <div 
                         key={member.id} 
                         className="flex items-center justify-between p-2 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"
                         onClick={() => handleMemberClick(member)}
                       >
                         <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-yellow-600 min-w-[40px]">
+                            {getRankEmoji(index + 1)}
+                          </span>
                           <span className="font-medium">{member.name}</span>
                           {currentTeam.leaderId === member.id && (
                             <Crown className="h-4 w-4 text-yellow-500" />
@@ -752,35 +996,41 @@ const Teams = () => {
                   <p className="text-sm text-gray-600">이번 주 운동 횟수</p>
                 </div>
                 
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  <h4 className="font-semibold">최근 운동 기록</h4>
-                  {getMemberWorkoutEntries(selectedMember.id).slice(0, 5).map((entry) => (
-                    <div key={entry.id} className="border rounded-lg p-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <h5 className="font-medium">{entry.exerciseName}</h5>
-                        <span className="text-xs text-gray-500">
-                          {new Date(entry.date).toLocaleDateString('ko-KR')}
-                        </span>
+                <ScrollArea className="h-96">
+                  <div className="space-y-3 pr-4">
+                    <h4 className="font-semibold">최근 운동 기록</h4>
+                    {getMemberWorkoutEntries(selectedMember.id).slice(0, 10).map((entry) => (
+                      <div key={entry.id} className="border rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <h5 className="font-medium">{entry.exerciseName}</h5>
+                          <span className="text-xs text-gray-500">
+                            {new Date(entry.date).toLocaleDateString('ko-KR')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="h-4 w-4 text-blue-500" />
+                          <span className="text-sm text-blue-600">{entry.duration}분</span>
+                        </div>
+                        {entry.comment && (
+                          <p className="text-sm text-gray-600 mb-2">{entry.comment}</p>
+                        )}
+                        {entry.imageUrl && (
+                          <img 
+                            src={entry.imageUrl} 
+                            alt="운동 인증" 
+                            className="w-full h-32 object-cover rounded"
+                          />
+                        )}
                       </div>
-                      {entry.comment && (
-                        <p className="text-sm text-gray-600 mb-2">{entry.comment}</p>
-                      )}
-                      {entry.imageUrl && (
-                        <img 
-                          src={entry.imageUrl} 
-                          alt="운동 인증" 
-                          className="w-full h-32 object-cover rounded"
-                        />
-                      )}
-                    </div>
-                  ))}
-                  
-                  {getMemberWorkoutEntries(selectedMember.id).length === 0 && (
-                    <p className="text-center text-gray-500 py-4">
-                      아직 운동 기록이 없습니다.
-                    </p>
-                  )}
-                </div>
+                    ))}
+                    
+                    {getMemberWorkoutEntries(selectedMember.id).length === 0 && (
+                      <p className="text-center text-gray-500 py-4">
+                        아직 운동 기록이 없습니다.
+                      </p>
+                    )}
+                  </div>
+                </ScrollArea>
               </div>
             )}
           </DialogContent>

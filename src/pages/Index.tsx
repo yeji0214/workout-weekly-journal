@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Target, Calendar, Trophy, Plus, Eye } from 'lucide-react';
+import { Camera, Target, Calendar, Trophy, Plus, Eye, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,12 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface WorkoutEntry {
   id: string;
   date: string;
   exerciseName: string;
   comment: string;
+  duration: number; // 운동 시간 (분)
   imageUrl?: string;
   userId?: string;
   userName?: string;
@@ -44,6 +46,7 @@ const Index = () => {
   // 운동 인증 폼 상태
   const [exerciseName, setExerciseName] = useState('');
   const [comment, setComment] = useState('');
+  const [duration, setDuration] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
 
@@ -118,12 +121,13 @@ const Index = () => {
 
   // 운동 인증 추가 (사진 필수)
   const handleAddWorkout = () => {
-    if (exerciseName.trim() && selectedImage && imagePreview) {
+    if (exerciseName.trim() && selectedImage && imagePreview && duration) {
       const newEntry: WorkoutEntry = {
         id: Date.now().toString(),
         date: new Date().toISOString().split('T')[0],
         exerciseName: exerciseName.trim(),
         comment: comment.trim(),
+        duration: parseInt(duration),
         imageUrl: imagePreview,
         userId: 'current-user',
         userName: '나'
@@ -134,6 +138,7 @@ const Index = () => {
       // 폼 리셋
       setExerciseName('');
       setComment('');
+      setDuration('');
       setSelectedImage(null);
       setImagePreview('');
       setShowAddForm(false);
@@ -177,7 +182,7 @@ const Index = () => {
       <div className="max-w-md mx-auto space-y-6">
         {/* 헤더 */}
         <div className="text-center py-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">🏋️‍♀️ Sweat Together</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">🏋️‍♀️ Fit Diary</h1>
           <p className="text-gray-600">주간 운동 챌린지</p>
         </div>
 
@@ -271,6 +276,20 @@ const Index = () => {
                 onChange={(e) => setExerciseName(e.target.value)}
               />
               
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="운동 시간 (분)"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="flex-1"
+                />
+                <div className="flex items-center px-3 text-sm text-gray-500">
+                  <Clock className="h-4 w-4 mr-1" />
+                  분
+                </div>
+              </div>
+              
               <Textarea
                 placeholder="오늘 운동은 어땠나요? (선택사항)"
                 value={comment}
@@ -306,7 +325,7 @@ const Index = () => {
               <div className="flex gap-2">
                 <Button 
                   onClick={handleAddWorkout}
-                  disabled={!exerciseName.trim() || !selectedImage}
+                  disabled={!exerciseName.trim() || !selectedImage || !duration}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
                   인증 완료
@@ -333,41 +352,48 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {workoutEntries.slice(0, 10).map((entry) => (
-                  <div 
-                    key={entry.id} 
-                    className="border rounded-lg p-4 bg-white cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => handleEntryClick(entry)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-gray-800">{entry.exerciseName}</h3>
-                      <div className="flex items-center gap-2">
-                        <Eye className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-500">{formatDate(entry.date)}</span>
+              <ScrollArea className="h-96">
+                <div className="space-y-4 pr-4">
+                  {workoutEntries.slice(0, 10).map((entry) => (
+                    <div 
+                      key={entry.id} 
+                      className="border rounded-lg p-4 bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => handleEntryClick(entry)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-gray-800">{entry.exerciseName}</h3>
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-500">{formatDate(entry.date)}</span>
+                        </div>
                       </div>
+                      
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm text-blue-600">{entry.duration}분</span>
+                      </div>
+                      
+                      {entry.comment && (
+                        <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>
+                      )}
+                      
+                      {entry.imageUrl && (
+                        <img 
+                          src={entry.imageUrl} 
+                          alt="운동 인증" 
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                      )}
                     </div>
-                    
-                    {entry.comment && (
-                      <p className="text-gray-600 text-sm mb-3">{entry.comment}</p>
-                    )}
-                    
-                    {entry.imageUrl && (
-                      <img 
-                        src={entry.imageUrl} 
-                        alt="운동 인증" 
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                    )}
-                  </div>
-                ))}
-                
-                {workoutEntries.length > 10 && (
-                  <p className="text-center text-gray-500 text-sm">
-                    총 {workoutEntries.length}개의 기록이 있습니다
-                  </p>
-                )}
-              </div>
+                  ))}
+                  
+                  {workoutEntries.length > 10 && (
+                    <p className="text-center text-gray-500 text-sm">
+                      총 {workoutEntries.length}개의 기록이 있습니다
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         )}
@@ -397,6 +423,11 @@ const Index = () => {
                 <div className="text-center">
                   <h3 className="text-xl font-bold text-gray-800 mb-2">{selectedEntry.exerciseName}</h3>
                   <p className="text-sm text-gray-500">{formatDate(selectedEntry.date)}</p>
+                </div>
+                
+                <div className="flex items-center justify-center gap-2 bg-blue-50 p-3 rounded-lg">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                  <span className="text-blue-800 font-medium">{selectedEntry.duration}분</span>
                 </div>
                 
                 {selectedEntry.comment && (
