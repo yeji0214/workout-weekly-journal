@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, TrendingUp, Award, Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 interface WorkoutEntry {
   id: string;
@@ -115,6 +115,76 @@ const Calendar = () => {
     });
   };
 
+  const getWeeklyStats = () => {
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    
+    const weeklyData = [];
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      const dayEntries = workoutEntries.filter(entry => entry.date === dateString);
+      
+      weeklyData.push({
+        day: days[i],
+        count: dayEntries.length,
+        duration: dayEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0)
+      });
+    }
+    
+    return weeklyData;
+  };
+
+  const getMonthlyTrend = () => {
+    const monthlyData = [];
+    const today = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      
+      const monthEntries = workoutEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= monthStart && entryDate <= monthEnd;
+      });
+      
+      monthlyData.push({
+        month: `${date.getMonth() + 1}월`,
+        count: monthEntries.length,
+        days: new Set(monthEntries.map(entry => entry.date)).size
+      });
+    }
+    
+    return monthlyData;
+  };
+
+  const getWeeklyTotal = () => {
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+    
+    return workoutEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate >= weekStart && entryDate <= weekEnd;
+    }).length;
+  };
+
+  const getWeeklyGoalProgress = () => {
+    const weeklyTotal = getWeeklyTotal();
+    const goal = 5; // 주간 목표 5회
+    return Math.min((weeklyTotal / goal) * 100, 100);
+  };
+
   return (
     <div className="p-4">
       <div className="max-w-md mx-auto space-y-6">
@@ -203,6 +273,62 @@ const Calendar = () => {
                 <div className="text-sm text-gray-600">운동한 날</div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* 주간 운동 통계 */}
+        <Card className="shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              주간 운동 통계
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={getWeeklyStats()}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="day" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#3B82F6" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-blue-600">{getWeeklyTotal()}</div>
+                <div className="text-sm text-gray-600">이번 주 총 운동</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {Math.round(getWeeklyGoalProgress())}%
+                </div>
+                <div className="text-sm text-gray-600">목표 달성률</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 월간 운동 추이 */}
+        <Card className="shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-purple-600" />
+              월간 운동 추이
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={getMonthlyTrend()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="count" stroke="#8B5CF6" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 

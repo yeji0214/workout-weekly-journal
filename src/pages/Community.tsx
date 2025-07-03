@@ -58,7 +58,7 @@ const Community = () => {
           title: '오늘 처음으로 5km 달리기 성공!',
           content: '드디어 5km를 쉬지 않고 뛸 수 있게 되었어요! 정말 뿌듯합니다. 다음 목표는 10km입니다!',
           author: '김철수',
-          authorTier: 'Gold',
+          authorTier: 'Gold 3',
           createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
           likes: 12,
           likedBy: ['이영희', '박민수'],
@@ -77,7 +77,7 @@ const Community = () => {
           title: '홈트레이닝 루틴 공유합니다',
           content: '집에서 할 수 있는 효과적인 운동 루틴을 공유해요!\n1. 버피 10회\n2. 스쿼트 20회\n3. 푸시업 15회\n4. 플랭크 1분\n\n3세트 반복하면 정말 좋아요!',
           author: '최수연',
-          authorTier: 'Silver',
+          authorTier: 'Silver 2',
           createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
           likes: 8,
           likedBy: ['김철수'],
@@ -93,19 +93,17 @@ const Community = () => {
     const savedProfile = localStorage.getItem('userProfile');
     if (savedProfile) {
       const profile = JSON.parse(savedProfile);
-      return profile.tier || 'Bronze';
+      return profile.tier || 'Bronze 5';
     }
-    return 'Bronze';
+    return 'Bronze 5';
   };
 
   const getTierEmoji = (tier: string): string => {
-    switch (tier) {
-      case 'Diamond': return '💎';
-      case 'Platinum': return '🏆';
-      case 'Gold': return '🥇';
-      case 'Silver': return '🥈';
-      default: return '🥉';
-    }
+    if (tier.includes('Diamond')) return '💎';
+    if (tier.includes('Platinum')) return '🏆';
+    if (tier.includes('Gold')) return '🥇';
+    if (tier.includes('Silver')) return '🥈';
+    return '🥉';
   };
 
   const handleCreatePost = () => {
@@ -135,6 +133,35 @@ const Community = () => {
     });
   };
 
+  const handleEditPost = (post: Post) => {
+    setEditingPost(post);
+    setNewPost({ title: post.title, content: post.content });
+    setShowCreatePost(true);
+  };
+
+  const handleUpdatePost = () => {
+    if (!editingPost || !newPost.title.trim() || !newPost.content.trim()) return;
+
+    const updatedPosts = posts.map(post => 
+      post.id === editingPost.id 
+        ? { ...post, title: newPost.title.trim(), content: newPost.content.trim() }
+        : post
+    );
+
+    setPosts(updatedPosts);
+    localStorage.setItem('communityPosts', JSON.stringify(updatedPosts));
+    
+    setNewPost({ title: '', content: '' });
+    setEditingPost(null);
+    setShowCreatePost(false);
+    setShowPostDetail(false);
+    
+    toast({
+      title: "게시글 수정 완료",
+      description: "게시글이 성공적으로 수정되었습니다.",
+    });
+  };
+
   const handleLikePost = (postId: string) => {
     const updatedPosts = posts.map(post => {
       if (post.id === postId) {
@@ -151,6 +178,12 @@ const Community = () => {
     });
     setPosts(updatedPosts);
     localStorage.setItem('communityPosts', JSON.stringify(updatedPosts));
+    
+    // 선택된 게시글도 업데이트
+    if (selectedPost) {
+      const updatedSelectedPost = updatedPosts.find(p => p.id === selectedPost.id);
+      setSelectedPost(updatedSelectedPost || null);
+    }
   };
 
   const handleAddComment = (postId: string) => {
@@ -203,6 +236,14 @@ const Community = () => {
     return '방금 전';
   };
 
+  const handleCreateOrUpdate = () => {
+    if (editingPost) {
+      handleUpdatePost();
+    } else {
+      handleCreatePost();
+    }
+  };
+
   return (
     <div className="p-4">
       <div className="max-w-md mx-auto space-y-6">
@@ -210,7 +251,11 @@ const Community = () => {
         <div className="flex items-center justify-between py-4">
           <h1 className="text-2xl font-bold text-gray-800">커뮤니티</h1>
           <Button 
-            onClick={() => setShowCreatePost(true)}
+            onClick={() => {
+              setEditingPost(null);
+              setNewPost({ title: '', content: '' });
+              setShowCreatePost(true);
+            }}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -228,6 +273,7 @@ const Community = () => {
                     <User className="h-4 w-4 text-gray-500" />
                     <span className="font-medium">{post.author}</span>
                     <span className="text-sm">{getTierEmoji(post.authorTier)}</span>
+                    <span className="text-xs text-gray-500">{post.authorTier}</span>
                   </div>
                   <span className="text-xs text-gray-500">
                     {formatTimeAgo(post.createdAt)}
@@ -235,7 +281,7 @@ const Community = () => {
                 </div>
                 
                 <h3 
-                  className="font-semibold text-gray-800 mb-2 cursor-pointer"
+                  className="font-semibold text-gray-800 mb-2 cursor-pointer hover:text-blue-600"
                   onClick={() => {
                     setSelectedPost(post);
                     setShowPostDetail(true);
@@ -275,7 +321,12 @@ const Community = () => {
                   
                   {post.author === currentUser && (
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="p-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-1"
+                        onClick={() => handleEditPost(post)}
+                      >
                         <Edit2 className="h-3 w-3" />
                       </Button>
                       <Button 
@@ -304,11 +355,11 @@ const Community = () => {
           )}
         </div>
 
-        {/* 글쓰기 모달 */}
+        {/* 글쓰기/수정 모달 */}
         <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>새 게시글 작성</DialogTitle>
+              <DialogTitle>{editingPost ? '게시글 수정' : '새 게시글 작성'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <Input
@@ -324,15 +375,19 @@ const Community = () => {
               />
               <div className="flex gap-2">
                 <Button 
-                  onClick={handleCreatePost}
+                  onClick={handleCreateOrUpdate}
                   disabled={!newPost.title.trim() || !newPost.content.trim()}
                   className="flex-1"
                 >
-                  작성하기
+                  {editingPost ? '수정하기' : '작성하기'}
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => setShowCreatePost(false)}
+                  onClick={() => {
+                    setShowCreatePost(false);
+                    setEditingPost(null);
+                    setNewPost({ title: '', content: '' });
+                  }}
                   className="flex-1"
                 >
                   취소
@@ -356,6 +411,7 @@ const Community = () => {
                       <User className="h-4 w-4" />
                       <span>{selectedPost.author}</span>
                       <span>{getTierEmoji(selectedPost.authorTier)}</span>
+                      <span>{selectedPost.authorTier}</span>
                       <span>•</span>
                       <span>{formatTimeAgo(selectedPost.createdAt)}</span>
                     </div>
@@ -369,7 +425,7 @@ const Community = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleLikePost(selectedPost.id)}
-                        className={post.likedBy.includes(currentUser) ? 'text-red-500' : 'text-gray-500'}
+                        className={selectedPost.likedBy.includes(currentUser) ? 'text-red-500' : 'text-gray-500'}
                       >
                         <Heart className={`h-4 w-4 mr-1 ${selectedPost.likedBy.includes(currentUser) ? 'fill-current' : ''}`} />
                         {selectedPost.likes}

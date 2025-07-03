@@ -22,7 +22,7 @@ const Settings = () => {
     name: '나',
     profileImage: '/placeholder.svg',
     bankAccount: '',
-    tier: 'Bronze',
+    tier: 'Bronze 5',
     totalWorkouts: 0
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -50,31 +50,47 @@ const Settings = () => {
   };
 
   const calculateTier = (totalWorkouts: number): string => {
-    if (totalWorkouts >= 100) return 'Diamond';
-    if (totalWorkouts >= 75) return 'Platinum';
-    if (totalWorkouts >= 50) return 'Gold';
-    if (totalWorkouts >= 25) return 'Silver';
-    return 'Bronze';
+    if (totalWorkouts >= 500) return 'Diamond 1';
+    if (totalWorkouts >= 450) return 'Diamond 2';
+    if (totalWorkouts >= 400) return 'Diamond 3';
+    if (totalWorkouts >= 350) return 'Diamond 4';
+    if (totalWorkouts >= 300) return 'Diamond 5';
+    if (totalWorkouts >= 250) return 'Platinum 1';
+    if (totalWorkouts >= 200) return 'Platinum 2';
+    if (totalWorkouts >= 175) return 'Platinum 3';
+    if (totalWorkouts >= 150) return 'Platinum 4';
+    if (totalWorkouts >= 125) return 'Platinum 5';
+    if (totalWorkouts >= 100) return 'Gold 1';
+    if (totalWorkouts >= 85) return 'Gold 2';
+    if (totalWorkouts >= 70) return 'Gold 3';
+    if (totalWorkouts >= 55) return 'Gold 4';
+    if (totalWorkouts >= 40) return 'Gold 5';
+    if (totalWorkouts >= 35) return 'Silver 1';
+    if (totalWorkouts >= 30) return 'Silver 2';
+    if (totalWorkouts >= 25) return 'Silver 3';
+    if (totalWorkouts >= 20) return 'Silver 4';
+    if (totalWorkouts >= 15) return 'Silver 5';
+    if (totalWorkouts >= 12) return 'Bronze 1';
+    if (totalWorkouts >= 9) return 'Bronze 2';
+    if (totalWorkouts >= 6) return 'Bronze 3';
+    if (totalWorkouts >= 3) return 'Bronze 4';
+    return 'Bronze 5';
   };
 
   const getTierColor = (tier: string): string => {
-    switch (tier) {
-      case 'Diamond': return 'text-cyan-500';
-      case 'Platinum': return 'text-gray-400';
-      case 'Gold': return 'text-yellow-500';
-      case 'Silver': return 'text-gray-500';
-      default: return 'text-amber-600';
-    }
+    if (tier.includes('Diamond')) return 'text-cyan-500';
+    if (tier.includes('Platinum')) return 'text-gray-400';
+    if (tier.includes('Gold')) return 'text-yellow-500';
+    if (tier.includes('Silver')) return 'text-gray-500';
+    return 'text-amber-600';
   };
 
   const getTierEmoji = (tier: string): string => {
-    switch (tier) {
-      case 'Diamond': return '💎';
-      case 'Platinum': return '🏆';
-      case 'Gold': return '🥇';
-      case 'Silver': return '🥈';
-      default: return '🥉';
-    }
+    if (tier.includes('Diamond')) return '💎';
+    if (tier.includes('Platinum')) return '🏆';
+    if (tier.includes('Gold')) return '🥇';
+    if (tier.includes('Silver')) return '🥈';
+    return '🥉';
   };
 
   const handleSave = () => {
