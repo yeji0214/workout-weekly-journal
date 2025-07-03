@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, ArrowLeft, Crown, UserMinus, Vote, Medal, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -286,9 +285,37 @@ const Teams = () => {
     }
   };
 
+  const getUserProfile = () => {
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      return JSON.parse(savedProfile);
+    }
+    return { bankAccount: '', tier: 'Bronze' };
+  };
+
+  const getTierEmoji = (tier: string): string => {
+    switch (tier) {
+      case 'Diamond': return '💎';
+      case 'Platinum': return '🏆';
+      case 'Gold': return '🥇';
+      case 'Silver': return '🥈';
+      default: return '🥉';
+    }
+  };
+
   const handleCreateTeam = () => {
+    const userProfile = getUserProfile();
+    
+    if (!userProfile.bankAccount) {
+      toast({
+        title: "계좌 등록 필요",
+        description: "팀을 만들기 위해서는 설정에서 계좌를 등록해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (teamName.trim() && teamDescription.trim() && weeklyGoal) {
-      // 이미 팀에 속해있는지 확인
       if (currentTeam) {
         toast({
           title: "팀 생성 불가",
@@ -335,6 +362,17 @@ const Teams = () => {
   };
 
   const handleJoinTeam = (team: Team) => {
+    const userProfile = getUserProfile();
+    
+    if (!userProfile.bankAccount) {
+      toast({
+        title: "계좌 등록 필요",
+        description: "팀에 참여하기 위해서는 설정에서 계좌를 등록해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (currentTeam) {
       toast({
         title: "참여 불가",
@@ -724,6 +762,10 @@ const Teams = () => {
         {/* 헤더 */}
         <div className="text-center py-6">
           <h1 className="text-2xl font-bold text-gray-800">팀 관리</h1>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span className="text-sm">{getTierEmoji(getUserProfile().tier)}</span>
+            <span className="text-sm text-gray-600">{getUserProfile().tier} 티어</span>
+          </div>
         </div>
 
         {/* 현재 팀 정보 */}
@@ -804,6 +846,11 @@ const Teams = () => {
                         <span>목표: {team.weeklyGoal}회/주</span>
                         <span>멤버: {team.members.length}명</span>
                       </div>
+                      {!getUserProfile().bankAccount && (
+                        <p className="text-xs text-red-500 mt-1">
+                          * 계좌 등록 후 참여 가능
+                        </p>
+                      )}
                     </div>
                     {!currentTeam && (
                       <Button 
